@@ -33,14 +33,17 @@ public class HttpProxyMainThread extends Thread {
 			csocket.setSoTimeout(TIMEOUT);
 			cis = csocket.getInputStream();
 			cos = csocket.getOutputStream();
+			StringBuilder sb=new StringBuilder();
+
 			while (true) {
 				int c = cis.read();
 				if (c == -1)
 					break; // -1为结尾标志
 				if (c == '\r' || c == '\n')
 					break;// 读入第一行数据,从中获取目标主机url
-				firstLine = firstLine + (char) c;
+				sb.append((char) c);
 			}
+			firstLine = sb.toString();
 			log.info("收到请求："+firstLine);
 
 
@@ -78,12 +81,16 @@ public class HttpProxyMainThread extends Thread {
 				cis.close();
 				cos.close();
 			} catch (Exception e1) {
+				log.error("客户端socket关闭失败",e1);
 			}
 			try {
-				ssocket.close();
-				sis.close();
-				sos.close();
+				if(ssocket!=null) {
+					ssocket.close();
+					sis.close();
+					sos.close();
+				}
 			} catch (Exception e2) {
+				log.error("客户端socket关闭失败",e2);
 			}
 		}
 	}
