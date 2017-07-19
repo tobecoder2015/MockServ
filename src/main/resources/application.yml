@@ -1,0 +1,26 @@
+server:
+  port: 9808
+env: dev
+mongodb:
+  uri: mongodb://localhost/indoor_test
+
+datasource:
+  indoor:
+    url: jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=UTF-8&allowMultiQueries=true
+    username: root
+    password:
+    maxActive: 50
+    filters: stat,slf4j
+    connectionProperties: druid.stat.slowSqlMillis=1000;druid.stat.mergeSql=true
+
+httpclient:
+  connectTimeout: 3000
+  readTimeout: 10000
+  maxConnection: 200
+  maxConnectionPerHost: 20
+  retry: 3
+jsondoc:
+  version: 1.0
+  base-path: http://localhost:9100/
+  packages:
+    - com.wing
