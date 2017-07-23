@@ -1,5 +1,7 @@
 package com.wing.core.proxy;
 
+import com.wing.config.Config;
+import com.wing.core.domain.MockRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 
@@ -10,9 +12,7 @@ import java.net.Socket;
 
 @Slf4j
 public class HttpsProxyMainThread extends Thread {
-	static public int CONNECT_RETRIES = 5; // 尝试与目标主机连接次数
-	static public int CONNECT_PAUSE = 10; // 每次建立连接的间隔时间
-	static public int TIMEOUT = 10000; // 每次尝试连接的最大时间
+
 
 	SSLSocketFactory ssf = (SSLSocketFactory) SSLSocketFactory.getDefault();
 
@@ -34,7 +34,7 @@ public class HttpsProxyMainThread extends Thread {
 		// cos为客户端输出流，sos为目标主机输出流
 		OutputStream cos = null, sos = null;
 		try {
-			csocket.setSoTimeout(TIMEOUT);
+			csocket.setSoTimeout(Config.timeout);
 			cis = csocket.getInputStream();
 			cos = csocket.getOutputStream();
 			StringBuilder sb=new StringBuilder();
@@ -52,12 +52,12 @@ public class HttpsProxyMainThread extends Thread {
 
 
 			if(StringUtils.isNotBlank(firstLine)) {
-				URL url = URL.builder(firstLine);//将url封装成对象，完成一系列转换工作,并在getIP中实现了dns缓存
+				MockRequest url = MockRequest.builder(firstLine);//将url封装成对象，完成一系列转换工作,并在getIP中实现了dns缓存
 				firstLine = url.getFirstLine(firstLine);
 
 				log.debug("解析首行：" + firstLine);
 
-				int retry = CONNECT_RETRIES;
+				int retry = Config.connectRetries;
 				while (retry-- != 0) {
 					try {
 						ssocket=ssf.createSocket(url.getIp(), Integer.parseInt(url.getPort()));
@@ -67,10 +67,10 @@ public class HttpsProxyMainThread extends Thread {
 						log.error("fail connect to (" + url.getIp() + ":" + url.getPort() + ")(host:" + url.getHost() + ")");
 					}
 					// 等待
-					Thread.sleep(CONNECT_PAUSE);
+					Thread.sleep(Config.connectPause);
 				}
 				if (ssocket != null) {
-					ssocket.setSoTimeout(TIMEOUT);
+					ssocket.setSoTimeout(Config.timeout);
 					sis = ssocket.getInputStream();
 					sos = ssocket.getOutputStream();
 					sos.write(firstLine.getBytes()); // 将请求头写入

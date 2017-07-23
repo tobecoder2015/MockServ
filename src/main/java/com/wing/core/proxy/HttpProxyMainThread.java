@@ -1,5 +1,9 @@
 package com.wing.core.proxy;
 
+import com.wing.config.Config;
+import com.wing.core.domain.MockRequest;
+import com.wing.core.domain.MockResponse;
+import com.wing.core.filter.FilterChain;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 
@@ -9,10 +13,7 @@ import java.net.Socket;
 
 @Slf4j
 public class HttpProxyMainThread extends Thread {
-	static public int CONNECT_RETRIES = 5; // 尝试与目标主机连接次数
-	static public int CONNECT_PAUSE = 10; // 每次建立连接的间隔时间
-	static public int TIMEOUT = 10000; // 每次尝试连接的最大时间
-	
+
 	protected Socket csocket;// 与客户端连接的Socket
 
 	public HttpProxyMainThread(Socket cs) {
@@ -23,14 +24,13 @@ public class HttpProxyMainThread extends Thread {
 
 	public void run() {
 		String firstLine = ""; // http请求头第一行
-		String urlStr = ""; // 请求的url
 		Socket ssocket = null;//与目标服务器连接的socket
 		// cis为客户端输入流，sis为目标主机输入流
 		InputStream cis = null, sis = null;
 		// cos为客户端输出流，sos为目标主机输出流
 		OutputStream cos = null, sos = null;
 		try {
-			csocket.setSoTimeout(TIMEOUT);
+			csocket.setSoTimeout(Config.timeout);
 			cis = csocket.getInputStream();
 			cos = csocket.getOutputStream();
 			StringBuilder sb=new StringBuilder();
@@ -47,26 +47,39 @@ public class HttpProxyMainThread extends Thread {
 			log.info("收到请求："+firstLine);
 
 
+
+
 			if(StringUtils.isNotBlank(firstLine)) {
-				URL url = URL.builder(firstLine);//将url封装成对象，完成一系列转换工作,并在getIP中实现了dns缓存
-				firstLine = url.getFirstLine(firstLine);
+
+				MockRequest mockRequest = MockRequest.builder(firstLine);//将url封装成对象，完成一系列转换工作,并在getIP中实现了dns缓存
+				firstLine = mockRequest.getFirstLine(firstLine);
+
+				FilterChain filterChain=new FilterChain();
+				MockResponse mockResponse=new MockResponse();
+				if(filterChain.doFilter(mockRequest,mockResponse)) {
+					cos.write(mockResponse.bytes());
+					return;
+				}
+
+
+
 
 				log.debug("解析首行：" + firstLine);
 
-				int retry = CONNECT_RETRIES;
+				int retry = Config.connectRetries;
 				while (retry-- != 0) {
 					try {
-						ssocket = new Socket(url.getIp(), Integer.parseInt(url.getPort())); // 尝试建立与目标主机的连接
-						log.debug("successfully connect to (" + url.getIp() + ":" + url.getPort() + ")(host:" + url.getHost() + "),get resource(" + url.getQuery() + ")");
+						ssocket = new Socket(mockRequest.getIp(), Integer.parseInt(mockRequest.getPort())); // 尝试建立与目标主机的连接
+						log.debug("successfully connect to (" + mockRequest.getIp() + ":" + mockRequest.getPort() + ")(host:" + mockRequest.getHost() + "),get resource(" + mockRequest.getQuery() + ")");
 						break;
 					} catch (Exception e) {
-						log.error("fail connect to (" + url.getIp() + ":" + url.getPort() + ")(host:" + url.getHost() + ")");
+						log.error("fail connect to (" + mockRequest.getIp() + ":" + mockRequest.getPort() + ")(host:" + mockRequest.getHost() + ")");
 					}
 					// 等待
-					Thread.sleep(CONNECT_PAUSE);
+					Thread.sleep(Config.connectPause);
 				}
 				if (ssocket != null) {
-					ssocket.setSoTimeout(TIMEOUT);
+					ssocket.setSoTimeout(Config.timeout);
 					sis = ssocket.getInputStream();
 					sos = ssocket.getOutputStream();
 					sos.write(firstLine.getBytes()); // 将请求头写入

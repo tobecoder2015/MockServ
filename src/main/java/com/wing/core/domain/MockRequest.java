@@ -1,20 +1,23 @@
-package com.wing.core.proxy;
+package com.wing.core.domain;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Map;
 
 @Data
 @Slf4j
-public class URL {
+public class MockRequest {
 	private String scheme;
 	private String host;
 	private String ip;
 	private String query;
 	private String port;
 	private String url;
+	private Map<String,String> headers;
+	private String body;
 
 
 	public static String getIp(String host) {
@@ -53,7 +56,7 @@ public class URL {
 	 * @param firstLine
 	 * @return
 	 */
-	public static  URL builder(String firstLine) {
+	public static MockRequest builder(String firstLine) {
 		String scheme = "http";
 		String host = "";
 		String port = "80";
@@ -61,7 +64,7 @@ public class URL {
 		String url="";
 		String query="";
 
-		URL newUrl=new URL();
+		MockRequest newUrl=new MockRequest();
 
 		try {
 			String[] tokens = firstLine.split(" ");

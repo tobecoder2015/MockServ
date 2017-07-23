@@ -26,13 +26,13 @@ import javax.sql.DataSource;
 @MapperScan("com.wing.dao")  //ibatis 配置扫描
 public class DbConfig {
 
-    @Value("${mongodb.uri}")
-    String mongoUrl;
-
-    @Bean(name = "mongodb")
-    public MongoDb mongo() {
-        return new MongoDb(mongoUrl);
-    }
+//    @Value("${mongodb.uri}")
+//    String mongoUrl;
+//
+//    @Bean(name = "mongodb")
+//    public MongoDb mongo() {
+//        return new MongoDb(mongoUrl);
+//    }
 
 
     @Bean(name = "logFilter")

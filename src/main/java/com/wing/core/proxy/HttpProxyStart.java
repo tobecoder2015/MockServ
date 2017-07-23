@@ -1,12 +1,11 @@
-package com.wing;
+package com.wing.core.proxy;
 
-import com.wing.core.proxy.HttpProxyMainThread;
+import com.wing.config.Config;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import javax.net.ssl.SSLServerSocketFactory;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -17,15 +16,13 @@ import java.util.concurrent.Executors;
  * 参考  http://www.java2s.com/Tutorial/Java/0490__Security/HTTPSServer.htm
  */
 @Slf4j
-@Component
-@Order(value = 2)
-public class HttpProxyStart implements CommandLineRunner{
+public class HttpProxyStart implements Runnable{
 
 	@Override
-	public void run(String... strings) throws Exception {
-		int httpPort = 9111;
+	public void run()  {
+		int httpPort = Config.httpPort;
 
-		ExecutorService executorServicePool= Executors.newFixedThreadPool(50);
+		ExecutorService executorServicePool= Executors.newFixedThreadPool(Config.httpPoolSize);
 
 		ServerSocket httpServerSocket=null ;
 
@@ -33,7 +30,7 @@ public class HttpProxyStart implements CommandLineRunner{
 		try {
 			 httpServerSocket = new ServerSocket(httpPort);;
 
-			log.info("The proxy have start ,http port:" + httpPort);
+			log.info("The http proxy have start , port:" + httpPort);
 
 			while (true) {
 				try {
@@ -41,11 +38,13 @@ public class HttpProxyStart implements CommandLineRunner{
 
 					//线程池处理
 					executorServicePool.submit(new HttpProxyMainThread(socketHttp));
+
 				} catch (Exception e) {
 					log.info("Thread start fail");
 				}
+				Thread.sleep(Config.listen_pause);
 			}
-		} catch (IOException e1) {
+		} catch (Exception e1) {
 			log.error("proxyd start fail",e1);
 		}finally{
 			try {
@@ -57,4 +56,5 @@ public class HttpProxyStart implements CommandLineRunner{
 			}
 		}
 	}
+
 }

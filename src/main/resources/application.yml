@@ -1,8 +1,17 @@
 server:
   port: 9808
-env: dev
-mongodb:
-  uri: mongodb://localhost/indoor_test
+
+proxy:
+  env: dev
+  connectRetries: 5
+  connectPause: 10
+  timeout: 10000
+  httpPort: 9111
+  httpsPort: 9112
+  listenPause: 50
+
+#mongodb:
+#  uri: mongodb://localhost/indoor_test
 
 datasource:
   indoor:
@@ -19,6 +28,7 @@ httpclient:
   maxConnection: 200
   maxConnectionPerHost: 20
   retry: 3
+
 jsondoc:
   version: 1.0
   base-path: http://localhost:9100/
